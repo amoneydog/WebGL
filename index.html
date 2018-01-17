@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>*{padding: 0; margin: 0; overflow: hidden;}</style>
+    <script src="js/GLApp.js"></script>
+    <script src="MyApp.js"></script>
+    <script src="js/Math.js"></script>
+    <style>
+        #FPS{
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #FFF;
+        }
+    </style>
+    <script src="js/Shapes.js"></script>
+</head>
+
+<body>
+    <div id="FPS">FPS: 60.0</div>
+    <script>
+        window.onload = function () {
+            var canvas = document.createElement("canvas");
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            document.body.appendChild(canvas);
+
+            window.onresize = function () {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            };
+
+            window.gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+
+            if (! window.gl) alert("Your browser not support WebGL, maybe you need a Chrome.");
+            else main();
+        }
+    </script>
+</body>
+</html>
