@@ -180,12 +180,6 @@ Vector3.toFloat32Array = function (a) {
     }
 };
 
-//TODO: Add Vector4
-/************** Vector4 *****************/
-//TODO: here
-
-
-
 
 /************** Matrix *****************/
 
