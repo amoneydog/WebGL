@@ -1,51 +1,27 @@
-
-var pos;
-var scale;
-var rot;
-
-var keystate = new Map();
+var keystate = {};
 window.onkeydown = function (ev) { keystate[ev.key] = true; };
 window.onkeyup = function (ev) { keystate[ev.key] = false; };
 
 function ProcessKeyboard(fElapsed) {
-    var step = 100 * fElapsed;
-    if (keystate['w']) pos.y += step;
-    if (keystate['s']) pos.y -= step;
-    if (keystate['a']) pos.x -= step;
-    if (keystate['d']) pos.x += step;
-    if (keystate['i']) pos.z -= step;
-    if (keystate['o']) pos.z += step;
-
-    if (keystate['+']) {
-        if (keystate['x']) scale.x += step;
-        if (keystate['y']) scale.y += step;
-        if (keystate['z']) scale.z += step;
-        if (keystate['j']) rot.x += step * 0.1;
-        if (keystate['k']) rot.y += step * 0.1;
-        if (keystate['l']) rot.z += step * 0.1;
-    }
-    if (keystate['-']) {
-        if (keystate['x']) scale.x -= step;
-        if (keystate['y']) scale.y -= step;
-        if (keystate['z']) scale.z -= step;
-        if (keystate['j']) rot.x -= step * 0.1;
-        if (keystate['k']) rot.y -= step * 0.1;
-        if (keystate['l']) rot.z -= step * 0.1;
-    }
+    //TODO: on process key event.
 }
 
 function main() {
-    GLX.Load_P3UC4();
-
-    var cube = Shaps.Cube();
+    window.boxFactory = new CubeFactory();
+    window.context = {
+        bordered: false,
+        eye: new Vector3(0, 0, 100),
+        target: new Vector3(0, 0, 0),
+        up: new Vector3(0, 1, 0),
+        matMVP: new Float32Array(new Matrix().data)
+    };
 
     var lastTime = 0;
-
     var FPS = document.getElementById("FPS");
 
-    pos = new Vector3(0, 0, 0);
-    scale = new Vector3(100, 100, 100);
-    rot = new Vector3(0, 0, 0);
+    boxFactory.addBox([10, 10, 10], [0, 0, 0], [0, 0, 0, 1], [153 / 255, 155 / 255, 204 / 255, 1]);
+    boxFactory.addBox([10, 10, 10], [20, 0, 0], [0, 0, 0, 1], [204/255, 153/255, 153/255, 1]);
+
     function Render(timestamp) {
 
         var fElapsed = (timestamp - lastTime) / 1000;
@@ -56,25 +32,14 @@ function main() {
         gl.clearDepth(1);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         gl.enable(gl.DEPTH_TEST);
-        GLX.P3UC4.begin();
-        {
-            GLX.P3UC4.setPositionVBO(cube.vbo);
-            GLX.P3UC4.setColor(1, 0, 0, 1);
-            var matTrans = Matrix.trans(pos.x, pos.y, pos.z);
-            var matScale = Matrix.scale(scale.x, scale.y, scale.z);
-            var matRotateX = Matrix.rotateX(rot.x);
-            var matRotateY = Matrix.rotateY(rot.y);
-            var matRotateZ = Matrix.rotateZ(rot.z);
-            var matRot = Matrix.mul(Matrix.mul(matRotateX, matRotateY), matRotateZ);
-            var matM = Matrix.mul(Matrix.mul(matRot, matScale), matTrans);
-            var matV = Matrix.lookAt(new Vector3(100, 0, 100), new Vector3(0, 0, 0), new Vector3(0, 1, 0));
-            var matP = Matrix.ortho(-gl.drawingBufferWidth / 2, gl.drawingBufferWidth / 2, -gl.drawingBufferHeight / 2, gl.drawingBufferHeight / 2, -5000, 5000);
-            var mvp = Matrix.mul(Matrix.mul(matM, matV), matP);
-            GLX.P3UC4.setWorldMat(mvp);
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cube.linesIBO);
-            gl.drawElements(gl.LINES, cube.LinesIndicesCount, cube.IBO_TYPE, 0);
-        }
-        GLX.P3UC4.end();
+
+        var matV = Matrix.lookAt(context.eye, context.target, context.up);
+        var matP = Matrix.perspective(30, gl.drawingBufferWidth / gl.drawingBufferHeight, 0.1, 100000);
+        context.matMVP = new Float32Array(Matrix.mul(matV, matP).data);
+
+        //TODO:
+        window.boxFactory.onRender(context);
+
         gl.flush();
         requestAnimationFrame(Render);
         var fps = 1 / fElapsed;

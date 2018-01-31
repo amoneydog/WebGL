@@ -182,6 +182,11 @@ Vector3.toFloat32Array = function (a) {
 
 
 /************** Matrix *****************/
+const IdentifyMatrixData =
+    [1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1];
 
 /**
  * Matrix
@@ -189,25 +194,15 @@ Vector3.toFloat32Array = function (a) {
  * @constructor
  */
 function Matrix(a) {
-     if (a instanceof Array)
-     {
-         this.data = new Float32Array(a);
-     }else{
-         this.data = new Float32Array([
-             1, 0, 0, 0,
-             0, 1, 0, 0,
-             0, 0, 1, 0,
-             0, 0, 0, 1]);
-     }
+     if (a instanceof Array) this.data = a;
+     else this.data = IdentifyMatrixData;
 }
 
 /**
  * Clone this matrix
  * @return {Matrix}
  */
-Matrix.prototype.clone = function () {
-    return new Matrix(this.data);
-};
+Matrix.prototype.clone = function () { return new Matrix(this.data); };
 
 /**
  * Mul operator
@@ -337,14 +332,35 @@ Matrix.ortho = function (l, r, b, t, zn, zf) {
 Matrix.lookAt = function (eye, target, upDir) {
     var forward = Vector3.sub(target, eye).normalize();
     var up = upDir.clone().normalize();
-    var side = Vector3.cross(up, forward).normalize();
-    up = Vector3.cross(forward, side).normalize();
+    var side = Vector3.cross(forward, up).normalize();
+    up = Vector3.cross(side, forward).normalize();
 
     return new Matrix([
         side.x, up.x, -forward.x, 0,
         side.y, up.y, -forward.y, 0,
         side.z, up.z, -forward.z, 0,
-        -Vector3.dot(side, eye), -Vector3.dot(up, eye), -Vector3.dot(forward, eye), 1
+        -Vector3.dot(side, eye), -Vector3.dot(up, eye), Vector3.dot(forward, eye), 1
     ]);
 };
 
+/**
+ * Construct a perspective matrix
+ * @param fovy The eye fovy on degree
+ * @param aspect The aspect of view
+ * @param zNear The near face
+ * @param zFar The far face
+ * @return {Matrix}
+ */
+Matrix.perspective = function (fovy, aspect, zNear, zFar) {
+    var range = Math.tan(fovy * D2R * 0.5) * zNear;
+    var left = -range * aspect;
+    var right = range * aspect;
+    var bottom = -range;
+    var top = range;
+    return new Matrix([
+        2 * zNear / (right - left), 0, 0, 0,
+        0, 2 * zNear / (top - bottom), 0, 0,
+        0, 0, -(zFar + zNear) / (zFar - zNear), -1,
+        0, 0, -(2 * zFar * zNear) / (zFar - zNear), 0
+    ]);
+};

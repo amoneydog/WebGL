@@ -5,7 +5,6 @@
     <title>Title</title>
     <style>*{padding: 0; margin: 0; overflow: hidden;}</style>
     <script src="js/GLApp.js"></script>
-    <script src="MyApp.js"></script>
     <script src="js/Math.js"></script>
     <style>
         #FPS{
@@ -15,11 +14,12 @@
             color: #FFF;
         }
     </style>
-    <script src="js/Shapes.js"></script>
+    <script src="js/CubeFactory.js"></script>
 </head>
 
 <body>
     <div id="FPS">FPS: 60.0</div>
+    <script src="MyApp.js"></script>
     <script>
         window.onload = function () {
             var canvas = document.createElement("canvas");
@@ -32,10 +32,21 @@
                 canvas.height = window.innerHeight;
             };
 
-            window.gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+            window.gl2 = canvas.getContext("webgl2") || canvas.getContext("experimental-webgl2");
+            window.gl = window.gl2 || canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
 
-            if (! window.gl) alert("Your browser not support WebGL, maybe you need a Chrome.");
-            else main();
+            if (! window.gl) alert("Your browser not support WebGL, maybe you need a Chrome or Firefox.");
+            else {
+                if (! window.gl2) {
+                    var ext = window.gl.getExtension('ANGLE_instanced_arrays');
+                    window.gl.VERTEX_ATTRIB_ARRAY_DIVISOR = ext.VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE;
+                    window.gl.drawArraysInstanced = function(mode, first, count, primcount){ ext.drawArraysInstancedANGLE(mode, first, count, primcount) };
+                    window.gl.drawElementsInstanced = function(mode, count, type, offset, primcount){ ext.drawElementsInstancedANGLE(mode, count, type, offset, primcount) };
+                    window.gl.vertexAttribDivisor = function(index, divisor){ ext.vertexAttribDivisorANGLE(index, divisor) };
+                    //TODO: append other extensions to window.gl
+                }
+                main();
+            }
         }
     </script>
 </body>
