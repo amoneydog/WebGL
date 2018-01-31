@@ -55,17 +55,29 @@ GLX.CreateIBO = function (datas, dynamic) {
 
 /********************** Add GLSL Programs *************************/
 
-GLX.Load_P3C4 = function () {
-    if (GLX.P3C4) return GLX.P3C4;
+GLX.Load_P3C4_INST = function () {
+    if (GLX.P3C4_INST) return GLX.P3C4_INST;
     var vs = GLX.CreateShader(gl.VERTEX_SHADER, "\n\
             attribute highp vec3 position;\n\
+            // Instanced    \n\
+            attribute highp vec3 pos;\n\
+            attribute highp vec3 scale;\n\
+            attribute highp vec4 rot;\n\
             attribute lowp vec4 color;\n\
-            uniform highp mat4 world;\n\
+            \n\
+            uniform highp mat4 mvp;\n\
             varying lowp vec4 outColor;\n\
+            mat4 makeTransition(vec3 t, vec3 s, vec4 r){\n\
+                return mat4(s.x, 0, 0, 0,\
+                    0, s.y, 0, 0,\
+                    0, 0, s.z, 0,\
+                    t.x, t.y, t.z, 1);\n\
+            }\n\
             void main()\n\
             {\n\
                 outColor = color;\n\
-                gl_Position = world * vec4(position, 1);\n\
+                mat4 matModel = makeTransition(pos, scale, rot);\
+                gl_Position = mvp * matModel * vec4(position, 1);\n\
             }\n\
         ");
     var fs = GLX.CreateShader(gl.FRAGMENT_SHADER, "\n\
@@ -76,76 +88,37 @@ GLX.Load_P3C4 = function () {
             }\n\
         ");
     var program = GLX.CreateProgram(vs, fs);
-    var attrPos = gl.getAttribLocation(program, "position");
-    var attrColor = gl.getAttribLocation(program, "color");
-    var unifWorld = gl.getUniformLocation(program, "world");
-    GLX.P3C4 = {
+    GLX.P3C4_INST = {
         begin: function () {
             gl.useProgram(program);
-            gl.enableVertexAttribArray(attrPos);
-            gl.enableVertexAttribArray(attrColor);
+            gl.enableVertexAttribArray(this.attrPosition);
+            gl.enableVertexAttribArray(this.attrInstPos);
+            gl.enableVertexAttribArray(this.attrInstScale);
+            gl.enableVertexAttribArray(this.attrInstRot);
+            gl.enableVertexAttribArray(this.attrInstColor);
+            gl.vertexAttribDivisor(this.attrInstPos, 1);
+            gl.vertexAttribDivisor(this.attrInstScale, 1);
+            gl.vertexAttribDivisor(this.attrInstRot, 1);
+            gl.vertexAttribDivisor(this.attrInstColor, 1);
         },
         end: function () {
-            gl.disableVertexAttribArray(attrPos);
-            gl.disableVertexAttribArray(attrColor);
+            gl.disableVertexAttribArray(this.attrPosition);
+            gl.disableVertexAttribArray(this.attrInstPos);
+            gl.disableVertexAttribArray(this.attrInstScale);
+            gl.disableVertexAttribArray(this.attrInstRot);
+            gl.disableVertexAttribArray(this.attrInstColor);
+            gl.vertexAttribDivisor(this.attrInstPos, 0);
+            gl.vertexAttribDivisor(this.attrInstScale, 0);
+            gl.vertexAttribDivisor(this.attrInstRot, 0);
+            gl.vertexAttribDivisor(this.attrInstColor, 0);
             gl.useProgram(null);
         },
-        setPositionVBO: function (vbo, stride, offset) {
-            gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-            gl.vertexAttribPointer(attrPos, 3, gl.FLOAT, false, stride ? 0 : stride, offset ? 0 : offset);
-        },
-        setColorVBO: function (vbo, stride, offset) {
-            gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-            gl.vertexAttribPointer(attrColor, 4, gl.FLOAT, false, stride ? 0 : stride, offset ? 0 : offset);
-        },
-        setWorldMat: function (mat) {
-            gl.uniformMatrix4fv(unifWorld, false, mat.data);
-        }
+        attrPosition: gl.getAttribLocation(program, "position"),
+        attrInstPos: gl.getAttribLocation(program, "pos"),
+        attrInstScale: gl.getAttribLocation(program, "scale"),
+        attrInstRot: gl.getAttribLocation(program, "rot"),
+        attrInstColor: gl.getAttribLocation(program, "color"),
+        unifMVP: gl.getUniformLocation(program, "mvp")
     };
-    return GLX.P3C4;
-};
-
-
-GLX.Load_P3UC4 = function () {
-    if (GLX.P3UC4) return GLX.P3UC4;
-    var vs = GLX.CreateShader(gl.VERTEX_SHADER, "\n\
-            attribute highp vec3 position;\n\
-            uniform highp mat4 world;\n\
-            void main()\n\
-            {\n\
-                gl_Position = world * vec4(position, 1);\n\
-            }\n\
-        ");
-    var fs = GLX.CreateShader(gl.FRAGMENT_SHADER, "\n\
-            uniform lowp vec4 color;\n\
-            void main()\n\
-            {\n\
-                gl_FragColor = color;\n\
-            }\n\
-        ");
-    var program = GLX.CreateProgram(vs, fs);
-    var attrPos = gl.getAttribLocation(program, "position");
-    var unifColor = gl.getUniformLocation(program, "color");
-    var unifWorld = gl.getUniformLocation(program, "world");
-    GLX.P3UC4 = {
-        begin: function () {
-            gl.useProgram(program);
-            gl.enableVertexAttribArray(attrPos);
-        },
-        end: function () {
-            gl.disableVertexAttribArray(attrPos);
-            gl.useProgram(null);
-        },
-        setPositionVBO: function (vbo, stride, offset) {
-            gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-            gl.vertexAttribPointer(attrPos, 3, gl.FLOAT, false, stride ? 0 : stride, offset ? 0 : offset);
-        },
-        setColor: function (r, g, b, a) {
-            gl.uniform4f(unifColor, r, g, b, a);
-        },
-        setWorldMat: function (mat) {
-            gl.uniformMatrix4fv(unifWorld, false, mat.data);
-        }
-    };
-    return GLX.P3UC4;
+    return GLX.P3C4_INST;
 };

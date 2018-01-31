@@ -4,6 +4,7 @@
       <w>attrib</w>
       <w>attribs</w>
       <w>datas</w>
+      <w>fovy</w>
       <w>framebuffer</w>
       <w>glsl</w>
       <w>highp</w>
@@ -12,6 +13,8 @@
       <w>multisample</w>
       <w>onload</w>
       <w>onresize</w>
+      <w>ortho</w>
+      <w>primcount</w>
       <w>prog</w>
       <w>rasterizer</w>
       <w>renderbuffer</w>
